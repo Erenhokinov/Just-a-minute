@@ -9,11 +9,9 @@
     prismlauncher-cracked.url = "github:Diegiwg/PrismLauncher-Cracked";
     chromashell.url = "github:SecLBL/ChromaShell-Flake";
     chromashell.inputs.nixpkgs.follows = "nixpkgs";
-    zen-browser.url = "github:youwen5/zen-browser-flake";
-    zen-browser.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { nixpkgs, home-manager, zen-browser, chromashell, ... }@inputs: {
+  outputs = { nixpkgs, home-manager, chromashell, ... }@inputs: {
     nixosConfigurations.gnu = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
@@ -31,6 +29,7 @@
         })
 
         ({ pkgs, config, ... }: {
+          time.timeZone = "Europe/Moscow";
           programs.chromashell-system.enable = true;
           nixpkgs.config.allowUnfree = true;
 
@@ -81,18 +80,13 @@
           programs.gamemode.enable = true;
 
           environment.systemPackages = with pkgs; [
-            htop
             git
-            vim
             nwg-look
             gtk3
             curl
             neovim
             pciutils
-            btop
-            cava
             materialgram
-            appimage-run
             heroic
             inputs.prismlauncher-cracked.packages.${pkgs.stdenv.hostPlatform.system}.prismlauncher
           ];
@@ -113,11 +107,11 @@
             imports = [ chromashell.homeManagerModules.default ];
 
             home.packages = [
-              zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
+            
             ];
             home.pointerCursor = {
               name = "Bibata-Material-Cloud";
-              size = 24;
+              size = 28;
               package = pkgs.runCommand "bibata-material-cloud" {} ''
                 mkdir -p $out/share/icons
                 ln -s /home/gnu/.local/share/icons/bibata-material-v1.0.0/Bibata-Material-Cloud $out/share/icons/Bibata-Material-Cloud
