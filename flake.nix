@@ -6,7 +6,9 @@
 
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
     prismlauncher-cracked.url = "github:Diegiwg/PrismLauncher-Cracked";
+
     chromashell.url = "github:SecLBL/ChromaShell-Flake";
     chromashell.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -19,14 +21,16 @@
         ./hardware-laptop.nix
         chromashell.nixosModules.default
 
-        ({ pkgs, ... }: let
-          customEdid = pkgs.runCommandNoCC "custom-100hz-edid" {} ''
-            mkdir -p $out/lib/firmware/edid
-            cp ${./100hz.bin} $out/lib/firmware/edid/100hz.bin
-          '';
-        in {
-          hardware.firmware = [ customEdid ];
-        })
+        ({ pkgs, ... }:
+          let
+            customEdid = pkgs.runCommandNoCC "custom-100hz-edid" { } ''
+              mkdir -p $out/lib/firmware/edid
+              cp ${./100hz.bin} $out/lib/firmware/edid/100hz.bin
+            '';
+          in
+          {
+            hardware.firmware = [ customEdid ];
+          })
 
         ({ pkgs, config, ... }: {
           time.timeZone = "Europe/Moscow";
@@ -34,6 +38,13 @@
           nixpkgs.config.allowUnfree = true;
 
           nix.settings.experimental-features = [ "nix-command" "flakes" ];
+          nix.gc = {
+            automatic = true;
+            dates = "weekly";
+            options = "--delete-older-than 14d";
+          };
+          nix.settings.auto-optimise-store = true;
+
           zramSwap = {
             enable = true;
             priority = 100;
@@ -41,11 +52,14 @@
             swapDevices = 1;
             algorithm = "zstd";
           };
+
           boot = {
             kernelPackages = pkgs.linuxPackages_latest;
             kernelModules = [ "v4l2loopback" "usbhid" ];
             extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
-            kernel.sysctl = { "vm.max_map_count" = 2147483642; };
+            kernel.sysctl = {
+              "vm.max_map_count" = 2147483642;
+            };
             extraModprobeConfig = "options usbhid mousepoll=1";
 
             kernelParams = [
@@ -79,6 +93,22 @@
           };
           programs.gamemode.enable = true;
 
+          systemd.services.cpu-freq-cap = {
+            description = "Enable boost but cap CPU frequency at 3.1GHz";
+            wantedBy = [ "multi-user.target" ];
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              ExecStart = pkgs.writeShellScript "cpu-freq-cap" ''
+                echo 1 > /sys/devices/system/cpu/cpufreq/boost
+                for cpu in /sys/devices/system/cpu/cpu*/cpufreq; do
+                  echo performance > "$cpu/scaling_governor"
+                  echo 3100000 > "$cpu/scaling_max_freq"
+                done
+              '';
+            };
+          };
+
           environment.systemPackages = with pkgs; [
             git
             nwg-look
@@ -95,6 +125,7 @@
             isNormalUser = true;
             extraGroups = [ "wheel" "networkmanager" "video" ];
           };
+
           system.stateVersion = "24.11";
         })
 
@@ -103,16 +134,16 @@
         ({ pkgs, ... }: {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+
           home-manager.users.gnu = { pkgs, ... }: {
             imports = [ chromashell.homeManagerModules.default ];
 
-            home.packages = [
-            
-            ];
+            home.packages = [ ];
+
             home.pointerCursor = {
               name = "Bibata-Material-Cloud";
               size = 28;
-              package = pkgs.runCommand "bibata-material-cloud" {} ''
+              package = pkgs.runCommand "bibata-material-cloud" { } ''
                 mkdir -p $out/share/icons
                 ln -s /home/gnu/.local/share/icons/bibata-material-v1.0.0/Bibata-Material-Cloud $out/share/icons/Bibata-Material-Cloud
               '';
@@ -122,11 +153,24 @@
 
             programs.chromashell = {
               enable = true;
-              browser = { app = "brave"; manage = true; };
-              editor = { app = "vscode"; manage = true; };
-              comms = { app = "vencord"; manage = true; };
-              music = { app = "spicetify"; manage = true; };
+              browser = {
+                app = "brave";
+                manage = true;
+              };
+              editor = {
+                app = "vscode";
+                manage = true;
+              };
+              comms = {
+                app = "vencord";
+                manage = true;
+              };
+              music = {
+                app = "spicetify";
+                manage = true;
+              };
             };
+
             home.stateVersion = "24.11";
           };
         })
