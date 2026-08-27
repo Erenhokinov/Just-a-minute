@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
+    chaotic.url = "https://flakehub.com/f/chaotic-cx/nyx/*.tar.gz";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -13,13 +13,16 @@
     chromashell.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { nixpkgs, home-manager, chromashell, ... }@inputs: {
+  outputs = { nixpkgs, home-manager, chromashell, chaotic, ... }@inputs: {
     nixosConfigurations.gnu = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
         ./hardware-configuration.nix
         ./hardware-laptop.nix
         chromashell.nixosModules.default
+        chaotic.nixosModules.nyx-cache
+        chaotic.nixosModules.nyx-overlay
+        chaotic.nixosModules.nyx-registry
 
         ({ pkgs, ... }:
           let
@@ -37,14 +40,18 @@
           programs.chromashell-system.enable = true;
           nixpkgs.config.allowUnfree = true;
 
-          nix.settings.experimental-features = [ "nix-command" "flakes" ];
-          nix.gc = {
-            automatic = true;
-            dates = "weekly";
-            options = "--delete-older-than 14d";
+          nix.settings = {
+          experimental-features = [ "nix-command" "flakes" ];
+          auto-optimise-store = true;
+          substituters = [ "https://nyx-cache.chaotic.cx/" ];
+          trusted-public-keys = [ "nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk=" ];
           };
-          nix.settings.auto-optimise-store = true;
 
+          nix.gc = {
+          automatic = true;
+          dates = "weekly";
+          options = "--delete-older-than 14d";
+          };
           zramSwap = {
             enable = true;
             priority = 100;
@@ -54,7 +61,7 @@
           };
 
           boot = {
-            kernelPackages = pkgs.linuxPackages_latest;
+            kernelPackages = pkgs.linuxPackages_cachyos-bore;
             kernelModules = [ "v4l2loopback" "usbhid" ];
             extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
             kernel.sysctl = {
@@ -142,7 +149,7 @@
 
             home.pointerCursor = {
               name = "Bibata-Material-Cloud";
-              size = 28;
+              size = 40;
               package = pkgs.runCommand "bibata-material-cloud" { } ''
                 mkdir -p $out/share/icons
                 ln -s /home/gnu/.local/share/icons/bibata-material-v1.0.0/Bibata-Material-Cloud $out/share/icons/Bibata-Material-Cloud
