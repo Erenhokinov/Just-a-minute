@@ -8,7 +8,6 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     prismlauncher-cracked.url = "github:Diegiwg/PrismLauncher-Cracked";
-
     chromashell.url = "github:SecLBL/ChromaShell-Flake";
     chromashell.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -52,6 +51,7 @@
           dates = "weekly";
           options = "--delete-older-than 14d";
           };
+
           zramSwap = {
             enable = true;
             priority = 100;
@@ -82,9 +82,9 @@
               wrapInterpreterInShell = false;
               interpreter = "${pkgs.appimage-run}/bin/appimage-run";
               recognitionType = "magic";
-              offset = 0;
+              offset = 0;magicOrExtension = ''\x
               mask = ''\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff'';
-              magicOrExtension = ''\x7fELF....AI\x02'';
+              7fELF....AI\x02'';
             };
             plymouth.enable = false;
           };
@@ -95,7 +95,7 @@
 
           programs.steam = {
             enable = true;
-            remotePlay.openFirewall = true;
+            remotePlay.openFirewall = false;
             dedicatedServer.openFirewall = true;
           };
           programs.gamemode.enable = true;
@@ -120,11 +120,9 @@
             git
             nwg-look
             gtk3
-            curl
             neovim
             pciutils
             materialgram
-            heroic
             inputs.prismlauncher-cracked.packages.${pkgs.stdenv.hostPlatform.system}.prismlauncher
           ];
 
@@ -161,7 +159,7 @@
             programs.chromashell = {
               enable = true;
               browser = {
-                app = "brave";
+                app = "zen";
                 manage = true;
               };
               editor = {
@@ -169,7 +167,7 @@
                 manage = true;
               };
               comms = {
-                app = "vencord";
+                app = "legcord";
                 manage = true;
               };
               music = {
