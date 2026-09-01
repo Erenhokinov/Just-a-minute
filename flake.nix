@@ -15,6 +15,7 @@
   outputs = { nixpkgs, home-manager, chromashell, chaotic, ... }@inputs: {
     nixosConfigurations.gnu = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
+      specialArgs = { inherit inputs; };
       modules = [
         ./hardware-configuration.nix
         ./hardware-laptop.nix
@@ -40,16 +41,16 @@
           nixpkgs.config.allowUnfree = true;
 
           nix.settings = {
-          experimental-features = [ "nix-command" "flakes" ];
-          auto-optimise-store = true;
-          substituters = [ "https://nyx-cache.chaotic.cx/" ];
-          trusted-public-keys = [ "nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk=" ];
+            experimental-features = [ "nix-command" "flakes" ];
+            auto-optimise-store = true;
+            substituters = [ "https://nyx-cache.chaotic.cx/" ];
+            trusted-public-keys = [ "nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk=" ];
           };
 
           nix.gc = {
-          automatic = true;
-          dates = "weekly";
-          options = "--delete-older-than 14d";
+            automatic = true;
+            dates = "weekly";
+            options = "--delete-older-than 14d";
           };
 
           zramSwap = {
@@ -82,9 +83,9 @@
               wrapInterpreterInShell = false;
               interpreter = "${pkgs.appimage-run}/bin/appimage-run";
               recognitionType = "magic";
-              offset = 0;magicOrExtension = ''\x
+              offset = 0;
               mask = ''\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff'';
-              7fELF....AI\x02'';
+              magicOrExtension = ''\x7fELF....AI\x02'';
             };
             plymouth.enable = false;
           };
@@ -92,6 +93,14 @@
           networking.hostName = "gnu";
           networking.networkmanager.enable = true;
           services.flatpak.enable = true;
+
+          services.getty.autologinUser = "gnu";
+
+          environment.loginShellInit = ''
+            if uwsm check may-start; then
+              exec uwsm start hyprland-uwsm.desktop
+              fi
+              '';
 
           programs.steam = {
             enable = true;
@@ -136,14 +145,15 @@
 
         # Home Manager
         home-manager.nixosModules.home-manager
-        ({ pkgs, ... }: {
+        ({ pkgs, inputs, ... }: {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
 
           home-manager.users.gnu = { pkgs, ... }: {
             imports = [ chromashell.homeManagerModules.default ];
 
-            home.packages = [ ];
+            home.packages = [
+            ];
 
             home.pointerCursor = {
               name = "Bibata-Material-Cloud";
